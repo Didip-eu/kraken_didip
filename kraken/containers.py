@@ -26,6 +26,7 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple,
 
 import bidi.algorithm as bd
 import numpy as np
+import copy
 
 from kraken.lib.segmentation import compute_polygon_section
 
@@ -202,6 +203,45 @@ class Segmentation:
                         regs[k] = [Region(**reg) for reg in v]
                     self.regions = regs
                     break
+    
+    def to_bbox_segmentation( self, in_place=False ):
+        """
+        Instantiate a new Segmentation object where  all ``BaselineLine`` records
+        have become ``BBoxLine`` records.
+
+        Args:
+
+        in_place (bool): for in place conversion (default: False)
+
+        """
+        if self.type == 'bbox':
+            return self
+        bbox_lines = []
+        for baseline in self.lines:
+           
+            # modify baseline dict
+            boundary = baseline.boundary
+            bbox_record = [ min( x for x,y in boundary ), min( y for x,y in boundary ),
+                            max( x for x,y in boundary ), max( y for x,y in boundary )]
+            bbox_line = BBoxLine(
+                    id=baseline.id,
+                    type='bbox',
+                    bbox=bbox_record,
+                    text=baseline.text,
+                    base_dir=baseline.base_dir,
+                    imagename=baseline.imagename,
+                    tags=baseline.tags,
+                    split=baseline.split,
+                    regions=baseline.regions
+                    )
+
+            bbox_lines.append( bbox_line )
+
+        bbox_seg = copy.deepcopy( self )
+        bbox_seg.type = 'bbox'
+        bbox_seg.lines = bbox_lines
+        return bbox_seg
+
 
 
 class ocr_record(ABC):
