@@ -27,6 +27,7 @@ from typing import (TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple,
 import bidi.algorithm as bd
 import numpy as np
 import copy
+#from collections import deque
 
 from kraken.lib.segmentation import compute_polygon_section
 
@@ -446,8 +447,11 @@ class BaselineOCRRecord(ocr_record, BaselineLine):
         """
         Reorder the record using the BiDi algorithm.
         """
+        # All bidi calls below broken for bidi-python 0.5.* (07/2024): stick to 0.4.2 for the moment
         storage = bd.get_empty_storage()
-
+        # Until Bidi 0.5.* restores this function--this initialization step is superfluous, by the way,
+        # but it makes things clearer ;)
+        
         if base_dir not in ('L', 'R'):
             base_level = bd.get_base_level(self._prediction)
         else:
