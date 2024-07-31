@@ -5,7 +5,7 @@ Description
     :target: https://github.com/mittagessen/kraken/actions/workflows/test.yml
 
 kraken is a turn-key OCR system optimized for historical and non-Latin script
-material.
+material. This fork is meant to support the EU-funded Digital-to-Distant Diplomatics project.
 
 kraken's main features are:
 
@@ -20,6 +20,12 @@ kraken's main features are:
   - `Public repository <https://zenodo.org/communities/ocr_models>`_ of model files
   - Variable recognition network architecture
 
+DiDip changes:
+
+  - custom functions for containers
+  - fixing dependencies (eg. python-bidi)
+  - ...
+
 Installation
 ============
 
@@ -29,45 +35,7 @@ The latest stable releases can be installed either from `PyPi <https://pypi.org>
 
 ::
 
-  $ pip install kraken
-
-or through `conda <https://anaconda.org>`_:
-
-::
-
-  $ conda install -c conda-forge -c mittagessen kraken
-
-If you want direct PDF and multi-image TIFF/JPEG2000 support it is necessary to
-install the `pdf` extras package for PyPi:
-
-::
-
-  $ pip install kraken[pdf]
-
-or install `pyvips` manually with pip:
-
-::
-
-  $ pip install pyvips
-
-Conda environment files are provided for the seamless installation of the main
-branch as well:
-
-::
-
-  $ git clone https://github.com/mittagessen/kraken.git
-  $ cd kraken
-  $ conda env create -f environment.yml
-
-or:
-
-::
-
-  $ git clone https://github.com/mittagessen/kraken.git
-  $ cd kraken
-  $ conda env create -f environment_cuda.yml
-
-for CUDA acceleration with the appropriate hardware.
+  $ pip install kraken_didip
 
 Finally you'll have to scrounge up a model to do the actual recognition of
 characters. To download the default model for printed French text and place it
