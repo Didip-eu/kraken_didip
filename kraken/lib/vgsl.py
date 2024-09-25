@@ -154,7 +154,7 @@ class TorchVGSLModel(object):
         if spec[0] != '[' or spec[-1] != ']':
             raise ValueError('Non-sequential models not supported')
         spec = spec[1:-1]
-        blocks = spec.split(' ')
+        blocks = re.split(r' +', spec) # NPR: parse robust to extra spaces
         self.named_spec.append(blocks[0])
         pattern = re.compile(r'(\d+),(\d+),(\d+),(\d+)')
         m = pattern.match(blocks.pop(0))
