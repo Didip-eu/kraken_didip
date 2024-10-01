@@ -90,14 +90,14 @@ class TorchSeqRecognizer(object):
     def forward(self, line: torch.Tensor, lens: torch.Tensor = None) -> Union[np.ndarray, Tuple[np.ndarray, np.ndarray]]:
         """
         Performs a forward pass on a torch tensor of one or more lines with
-        shape (N, C, H, W) and returns a numpy array (N, W, C).
+        shape (N, C, H, W) and returns a numpy array (N, C, W).
 
         Args:
             line: NCHW line tensor
             lens: Optional tensor containing sequence lengths if N > 1
 
         Returns:
-            Tuple with (N, W, C) shaped numpy array and final output sequence
+            Tuple with (N, C, W) shaped numpy array and final output sequence
             lengths.
 
         Raises:

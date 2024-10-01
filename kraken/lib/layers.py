@@ -499,6 +499,7 @@ class TransposedSummarizingRNN(Module):
                 inputs: torch.Tensor,
                 seq_len: Optional[torch.Tensor] = None,
                 output_shape: Optional[Tuple[int, int]] = None) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        #print("TransposedSummarizingRNN(Module)(): seq_len=",seq_len)
         # NCHW -> HNWC
         inputs = inputs.permute(2, 0, 3, 1)
         if self.transpose:
@@ -509,16 +510,20 @@ class TransposedSummarizingRNN(Module):
             inputs = torch.cat([ones, inputs], dim=3)
         # HNWC -> (H*N)WC
         siz = inputs.size()
+        #print("TransposedSummarizingRNN(Module)(): inputs.size()=",siz)
         inputs = inputs.contiguous().view(-1, siz[2], siz[3])
+        #print("TransposedSummarizingRNN(Module)(): seq_len=", seq_len)
         if not self.transpose and seq_len is not None:
             if inputs.shape[0] != len(seq_len):
                 raise Exception(f'Height has to be 1 (not f{inputs.shape[0]} for batching/multi-sequences.')
             seq_len = seq_len.cpu()
             inputs = pack_padded_sequence(inputs, seq_len, batch_first=True, enforce_sorted=False)
+            #print("TransposedSummarizingRNN(Module)(): inputs.size()=", inputs[0].size())
         # (H*N)WO
         o, _ = self.layer(inputs)
         if not self.transpose and seq_len is not None:
-            o, seq_len = pad_packed_sequence(o, batch_first=True)
+            # NPR: ensure that padding extends to the default length
+            o, seq_len = pad_packed_sequence(o, batch_first=True, total_length=siz[2])
         # resize to HNWO
         o = o.view(siz[0], siz[1], siz[2], self.output_size)
         if self.summarize:
