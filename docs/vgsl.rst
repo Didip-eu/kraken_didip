@@ -1,4 +1,3 @@
-.. _vgsl:
 
 VGSL network specification
 ==========================
@@ -66,7 +65,7 @@ normalized to 48 pixels in height.
 
 .. code-block:: console
 
-        [1,48,0,1 Cr3,3,32 Do0.1,2 Mp2,2 Cr3,3,64 Do0.1,2 Mp2,2 S1(1x12)1,3 Lbx100 Do 01c59]
+        [1,48,0,1 Cr3,3,32 Do0.1,2 Mp2,2 Cr3,3,64 Do0.1,2 Mp2,2 S1(1x12)1,3 Lbx100 Do O1c59]
 
         Creating new model [1,48,0,1 Cr3,3,32 Do0.1,2 Mp2,2 Cr3,3,64 Do0.1,2 Mp2,2 S1(1x12)1,3 Lbx100 Do] with 59 outputs
         layer		type	params
@@ -89,7 +88,7 @@ applying the final recurrent and linear layers.
 
 .. code-block:: console
 
-        [1,0,0,3 Cr3,3,16 Mp3,3 Lfys64 Lbx128 Lbx256 Do 01c59]
+        [1,0,0,3 Cr3,3,16 Mp3,3 Lfys64 Lbx128 Lbx256 Do O1c59]
 
         Creating new model [1,0,0,3 Cr3,3,16 Mp3,3 Lfys64 Lbx128 Lbx256 Do] with 59 outputs
         layer		type	params
