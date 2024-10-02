@@ -130,6 +130,31 @@ of the parallel block concatenated, i.e. the output of the first
 convolutional layer together with the output of the transposed convolutional layer,
 giving `32 + 32 = 64` feature dimensions.
 
+
+
+Output Layer
+------------
+
+(from `https://tesseract-ocr.github.io/tessdoc/tess4/VGSLSpecs.html`)
+
+The last “word” is the output specification and takes the form:
+
+.. code-block:: console
+
+        O(2|1|0)(l|s|c)n output layer with n classes.
+          2 (heatmap) Output is a 2-d vector map of the input (possibly at
+            different scale). (Not yet supported.)
+          1 (sequence) Output is a 1-d sequence of vector values.
+          0 (category) Output is a 0-d single vector value.
+          l uses a logistic non-linearity on the output, allowing multiple
+            hot elements in any output vector value. (Not yet supported.)
+          s uses a softmax non-linearity, with one-hot output in each value.
+          c uses a softmax with CTC. Can only be used with s (sequence).
+          NOTE Only O1s and O1c are currently supported.
+
+
+The number of classes should be taken from the charset.
+
 Convolutional Layers
 --------------------
 

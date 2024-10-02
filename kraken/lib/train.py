@@ -548,6 +548,10 @@ class RecognitionModel(L.LightningModule):
 
             if self.append:
                 self.train_set.dataset.encode(self.codec)
+
+                # NPR: where the output layer is added to the model specs: i.e. a CTC-decoder where
+                # the number of classes depends on the alphabet.
+
                 # now we can create a new model
                 self.spec = '[{} O1c{}]'.format(self.spec[1:-1], self.train_set.dataset.codec.max_label + 1)
                 logger.info(f'Appending {self.spec} to existing model {self.nn.spec} after {self.append}')

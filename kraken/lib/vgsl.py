@@ -121,6 +121,17 @@ class TorchVGSLModel(object):
                                       <p>. Defaults to 1D with 0.5
                                       probability.
                   Gn[{name}]<n> A group normalization layer with n groups
+                  O(2|1|0)(l|s|c)n output layer with n classes.
+                    2 (heatmap) Output is a 2-d vector map of the input (possibly at
+                      different scale). (Not yet supported.)
+                    1 (sequence) Output is a 1-d sequence of vector values.
+                    0 (category) Output is a 0-d single vector value.
+                    l uses a logistic non-linearity on the output, allowing multiple
+                      hot elements in any output vector value. (Not yet supported.)
+                    s uses a softmax non-linearity, with one-hot output in each value.
+                    c uses a softmax with CTC. Can only be used with s (sequence).
+                    NOTE Only O1s and O1c are currently supported.
+
                   ============ PLUMBING OPS ============
                   [...] Execute ... networks in series (layers).
                   (...) Execute ... networks in parallel.

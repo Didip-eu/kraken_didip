@@ -201,8 +201,11 @@ class mm_rpred(object):
             logger.warning('Empty run. Emitting empty record.')
             return BBoxOCRRecord('', (), (), line)
 
+        # =============================
+        # NPR: HTR happens here!
         logger.debug(f'Forward pass with model {tag}.')
         preds = net.predict(ts_box.unsqueeze(0))[0]
+        # =============================
 
         # calculate recognized LSTM locations of characters
         logger.debug('Convert to absolute coordinates')
