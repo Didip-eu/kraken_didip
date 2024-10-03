@@ -114,11 +114,26 @@ def greedy_decoder(outputs: np.ndarray) -> List[Tuple[int, int, int, float]]:
         A list with tuples (class, start, end, max). max is the maximum value
         of the softmax layer in the region.
     """
+    # Input: labels in C rows, time sequence in columns
     labels = np.argmax(outputs, 0)
+    # -> in each column, return the row index (i.e. the class label) that has max value
     seq_len = outputs.shape[1]
-    mask = np.eye(outputs.shape[0], dtype='bool')[labels].T
+
+    # a C x C diagonal matrix is used for 1-hot encoding of the results
+    # np.eye(outputs.shape[0], dtype='bool')[labels]
+    # = a matrix of W rows, where each C-cell row has a 1 in the position corresponding to the max label
+    # ... -> transposed (T)
+    # = a matrix of C rows, where each W-cell row has a 1 if the row index matches the max label for that position in the sequence
+    # outputs[ ... ] 
+    # = outputs is W x 1 -> select in each C-row the time-column value that is maximal for this column,
+    # -> resulting array has exactly 1 row/label value for each column/step but
+    # simple filtering (outputs[mask]) -which follows row/label order, not time order-
+    # is rather unexpected here, because zipping is made with time steps
+    #mask = np.eye(outputs.shape[0], dtype='bool')[labels].T
     classes = []
-    for label, group in groupby(zip(np.arange(seq_len), labels, outputs[mask]), key=lambda x: x[1]):
+    # zipping associate each time t with its max label and the corresponding score
+    #for label, group in groupby(zip(np.arange(seq_len), labels, outputs[mask]), key=lambda x: x[1]):
+    for label, group in groupby(zip(np.arange(seq_len), labels, np.max(outputs,0), key=lambda x: x[1]):
         lgroup = list(group)
         if label != 0:
             classes.append((label, lgroup[0][0], lgroup[-1][0], max(x[2] for x in lgroup)))
