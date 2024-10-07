@@ -133,7 +133,7 @@ def greedy_decoder(outputs: np.ndarray) -> List[Tuple[int, int, int, float]]:
     classes = []
     # zipping associate each time t with its max label and the corresponding score
     #for label, group in groupby(zip(np.arange(seq_len), labels, outputs[mask]), key=lambda x: x[1]):
-    for label, group in groupby(zip(np.arange(seq_len), labels, np.max(outputs,0), key=lambda x: x[1]):
+    for label, group in groupby(zip(np.arange(seq_len), labels, np.max(outputs,0)), key=lambda x: x[1]):
         lgroup = list(group)
         if label != 0:
             classes.append((label, lgroup[0][0], lgroup[-1][0], max(x[2] for x in lgroup)))
