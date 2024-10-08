@@ -708,8 +708,12 @@ class LinSoftmax(Module):
         o = self.lin(inputs)
         # switch between log softmax (needed by ctc) and regular (for inference).
         if not self.training:
+            #print("Compute softmax")
             o = F.softmax(o, dim=3)
+            # sum of all logits for each time step should be 1
+            # assert all( (1-elt) < 10**-6 for elt in torch.sum(torch.from_numpy(outputs[0]), 0) )
         else:
+            #print("Compute log(softmax)")
             o = F.log_softmax(o, dim=3)
         # and swap again
         return o.transpose(1, 3), seq_len

@@ -261,6 +261,7 @@ class TorchVGSLModel(object):
         Sets the model to training mode (enables dropout layers and disables
         softmax on CTC layers).
         """
+        print("training mode")
         self.nn.train()
         # set last layer back to eval mode if not CTC output layer
         # (log_softmax/softmax switch).
@@ -753,6 +754,7 @@ class TorchVGSLModel(object):
             logger.debug('{}\t\tconv\tkernel 1 x 1 filters {} stride 1 activation {}'.format(self.idx, outdim, nl))
             return fn.get_shape(input), [VGSLBlock(blocks[idx], m.group('type'), m.group('name'), self.idx)], fn
         else:
+            # for CTC-trained ouput, last layer is LinearSoftMax
             aug = True if m.group('aug') else False
             lin = layers.LinSoftmax(input[1], int(m.group('out')), aug)
             self.idx += 1
