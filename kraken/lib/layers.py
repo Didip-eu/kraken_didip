@@ -711,7 +711,7 @@ class LinSoftmax(Module):
             #print("Compute softmax")
             o = F.softmax(o, dim=3)
             # sum of all logits for each time step should be 1
-            # assert all( (1-elt) < 10**-6 for elt in torch.sum(torch.from_numpy(outputs[0]), 0) )
+            # assert all( (1-elt) < 10**-6 for elt in torch.sum(o[0], 0) )
         else:
             #print("Compute log(softmax)")
             o = F.log_softmax(o, dim=3)
