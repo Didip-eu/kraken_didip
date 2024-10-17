@@ -117,6 +117,7 @@ class TorchVGSLModel(object):
                            outputs, treating any y dimension independently.
                     Lfys64 runs a forward-only LSTM in the y-dimension with 64 outputs
                            and collapses the y-dimension to 1 element.
+                  Rn[{name}]<n> Residual net basic block with n outputs.
                   Do[{name}][<p>,<d>] Insert a dropout layer operating in
                                       <d> dimensions with probability
                                       <p>. Defaults to 1D with 0.5
@@ -141,6 +142,7 @@ class TorchVGSLModel(object):
                     single vector value.
                   S[{name}]<d>(<a>x<b>)<e>,<f> Splits one dimension, moves one part to another
                     dimension.
+                  A[{name}]<d>,<chunk size> Add together 2 chunks of the same dimension d.
         """
         self.spec = spec
         self.named_spec: List[str] = []
