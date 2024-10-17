@@ -31,6 +31,7 @@ __all__ = ['TorchVGSLModel']
 logger = logging.getLogger(__name__)
 
 
+
 class VGSLBlock(object):
     def __init__(self, block: str, layer: str, name: str, idx: int):
         if name:
@@ -147,7 +148,10 @@ class TorchVGSLModel(object):
                     self.build_dropout, self.build_maxpool, self.build_conv,
                     self.build_output, self.build_reshape, self.build_wav2vec2,
                     self.build_groupnorm, self.build_series,
-                    self.build_parallel, self.build_ro]
+                    self.build_parallel,
+                    self.build_resnet_block,
+                    self.build_ro,] # has to be last (does not accept output_shape arg.)
+        
         self.codec: Optional[PytorchCodec] = None
         self.criterion: Any = None
         self.nn = layers.MultiParamSequential()
@@ -164,8 +168,17 @@ class TorchVGSLModel(object):
         spec = spec.strip()
         if spec[0] != '[' or spec[-1] != ']':
             raise ValueError('Non-sequential models not supported')
-        spec = spec[1:-1]
-        blocks = re.split(r' +', spec) # NPR: parse robust to extra spaces
+
+        # NPR: make parsing robust to extra spaces, between blocks
+        # or before/after brackets and parentheses
+        spec = re.sub(r'\s+', ' ', spec)
+        spec = re.sub(r'^\s?\[\s?', r'[', spec)  # top-level, left bracket
+        spec = re.sub(r'\s?\]\s?$', r']', spec)  # top-level, right bracket
+        spec = spec[1:-1]                        # isolate nn content
+        spec = re.sub(r'([\[\(])\s', r'\1', spec)       # no spaces after left bracket/par.
+        spec = re.sub(r'\s([\]\)])', r'\1', spec)       # no spaces before right bracket/par.
+
+        blocks = re.split(r' ', spec) 
         self.named_spec.append(blocks[0])
         pattern = re.compile(r'(\d+),(\d+),(\d+),(\d+)')
         m = pattern.match(blocks.pop(0))
@@ -173,10 +186,17 @@ class TorchVGSLModel(object):
             raise ValueError('Invalid input spec.')
         batch, height, width, channels = [int(x) for x in m.groups()]
         self.input = (batch, channels, height, width)
+
+        # the NN is being built here
         named_spec, self.nn, self.output = self._parse(self.input, blocks)
+
         self.named_spec.extend(str(x) for x in named_spec)
+
+        # weight initialization througout the network
         self.init_weights()
 
+
+    # Parse the VGSL specs
     def _parse(self,
                input: Tuple[int, int, int, int],
                blocks: Sequence[str], parallel=False,
@@ -186,6 +206,8 @@ class TorchVGSLModel(object):
         """
         logger.debug('layer\t\ttype\tparams')
         named_spec = []
+
+        # initialize an empty torch Module
         if not parallel:
             nn = layers.MultiParamSequential()
         else:
@@ -193,13 +215,18 @@ class TorchVGSLModel(object):
             prev_oshape = None
             channels = 0
         idx = 0
+
+        # for each block spec in the sequence
         while idx < len(blocks):
             oshape = None
             layer = None
+
+            # Runs through all block constructors, until there is a regexp match
             for op in self.ops:
                 oshape, name, layer = op(input, blocks, idx, target_output_shape=target_output_shape if parallel or idx == len(blocks) - 1 else None)
                 if oshape:
                     break
+            # constructor has been found (the 'layer' variable stores the module)
             if oshape:
                 if not parallel:
                     input = oshape
@@ -261,7 +288,6 @@ class TorchVGSLModel(object):
         Sets the model to training mode (enables dropout layers and disables
         softmax on CTC layers).
         """
-        print("training mode")
         self.nn.train()
         # set last layer back to eval mode if not CTC output layer
         # (log_softmax/softmax switch).
@@ -659,6 +685,32 @@ class TorchVGSLModel(object):
                      f'filters {filters} stride {stride} dilation {dilation} activation {nl}')
         return fn.get_shape(input, target_output_shape), [VGSLBlock(blocks[idx], m.group('type'), m.group('name'), self.idx)], fn
 
+
+    def build_resnet_block(self,
+                           input: Tuple[int, int, int, int],
+                           blocks: List[str],
+                           idx: int,
+                           target_output_shape: Optional[Tuple[int, int, int, int]] = None) -> Union[Tuple[None, None, None],
+                                                                                                     Tuple[Tuple[int, int, int, int], str, Callable]]:
+        """
+        Builds a basic ResNet block (prototype)
+        """
+        pattern = re.compile(r'(?P<type>Rn)(?P<name>{\w+})?(?P<out>\d+)')
+        m = pattern.match(blocks[idx])
+        if not m:
+            return None, None, None
+        in_channels = input[1]
+        out_channels = int(m.group('out'))
+
+        fn = layers.ResNetBasicBlock(input[1], out_channels )
+        self.idx += 1
+        logger.debug(f'{self.idx}\t\tresnet_block({in_channels} x {out_channels})')
+
+        return fn.get_shape(input), [VGSLBlock(blocks[idx], m.group('type'), m.group('name'), self.idx)], fn
+
+
+
+
     def build_maxpool(self,
                       input: Tuple[int, int, int, int],
                       blocks: List[str],
@@ -847,3 +899,5 @@ class TorchVGSLModel(object):
         named_spec[0]._block = '(' + named_spec[0]._block
         named_spec[-1]._block = named_spec[-1]._block + ')'
         return oshape, named_spec, nn
+
+

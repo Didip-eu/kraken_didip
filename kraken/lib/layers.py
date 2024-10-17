@@ -19,7 +19,9 @@ root_logger.setLevel(level)
 # all tensors are ordered NCHW, the "feature" dimension is C, so the output of
 # an LSTM will be put into C same as the filters of a CNN.
 
-__all__ = ['Addition', 'MaxPool', 'Reshape', 'Dropout', 'TransposedSummarizingRNN', 'LinSoftmax', 'ActConv2D']
+__all__ = ['Addition', 'MaxPool', 'Reshape', 'Dropout', 'TransposedSummarizingRNN', 'LinSoftmax', 'ActConv2D', 'ResNetBasicBlock']
+
+
 
 
 class MultiParamSequential(Sequential):
@@ -55,6 +57,7 @@ class MultiParamParallel(Module):
             if output_shape is None:
                 output_shape = outputs[-1].shape[2:]
         return torch.cat(outputs, dim=1), seq_lens
+
 
 
 def PeepholeLSTMCell(input: torch.Tensor,
@@ -843,6 +846,11 @@ class ActConv2D(Module):
         else:
             o = self.co(inputs)
         # return logits for sigmoid activation during training
+        # i.e. activation function is applied when:
+        # - not in training
+        #      OR
+        # - not a sigmoid
+        # or: if in training and activation is SIGMOID, do not apply it
         if not (self.nl_name == 'SIGMOID' and self.training):
             o = self.nl(o)
 
@@ -1009,3 +1017,56 @@ class GroupNorm(Module):
                            output_names=[name],
                            custom_proto_spec=params)
         return name
+
+
+class ResNetBasicBlock(MultiParamSequential):
+    """
+    Basic residual block, as could be defined with the standard VGSL below, with <out>
+    target channels:
+
+        ```python
+        [([I Cl1,1,<out> Gn<out>] [Cr3,3,<out> Gn<out> Cl3,3,<out> Gn<out>]) A3,<out> Cr1,1,<out>]
+        ```
+    """
+    def __init__(self, in_channels: int, out_channels: int):
+        
+        super().__init__()
+        
+        self.out_channels = out_channels
+
+        conv1 = ActConv2D(in_channels, out_channels, (3,3), stride=1, nl='r')
+        bn1 = GroupNorm( out_channels, out_channels ) 
+        conv2 = ActConv2D(out_channels, out_channels, (3,3), stride=1)
+        bn2 = GroupNorm( out_channels, out_channels ) 
+        identity = Identity()
+        bn3 = GroupNorm( out_channels, out_channels ) 
+        expander = ActConv2D(in_channels, out_channels, (1,1), stride=1) if in_channels != out_channels else Identity()
+        # just for reLUing the sum
+        relu = ActConv2D(out_channels, out_channels, (1,1), stride=1, nl='r') 
+
+        # sum = half1 + half2 of channels, where halves 
+        # result from 2 equal channel chunks
+        # Note that C in dimension 3 in VGSL, but 1 in Torch
+        addition = Addition( 1, out_channels)
+
+        shortcut_sequence = MultiParamSequential()
+        for name, mod in (('Identity',identity), ('Expander',expander), ('Bn3',bn3)):
+            shortcut_sequence.add_module( name, mod )
+
+        convolution_sequence = MultiParamSequential()
+        for name, mod in (('Conv1', conv1), ('Bn1', bn1), ('Conv2', conv2), ('Bn2', bn2)):
+            convolution_sequence.add_module( name, mod )
+
+        residual = MultiParamParallel()
+        residual.add_module( 'Shortcut', shortcut_sequence )
+        residual.add_module( 'Convolutions', convolution_sequence )
+
+        for (name, mod) in (('Residual', residual), ('Addition', addition), ('Relu', relu) ):
+            self.add_module( name, mod )
+
+
+    def get_shape(self, input: Tuple[int, int, int, int]) -> Tuple[int, int, int, int]:
+        self.output_shape = (input[0], self.out_channels, input[2], input[3] )
+        return self.output_shape
+
+
